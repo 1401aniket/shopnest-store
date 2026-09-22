@@ -78,6 +78,10 @@ async function sendOtp(phone, code) {
 }
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'shopnest-api' }));
+app.get('/api/store-settings', (_req, res) => {
+  const rows = db.prepare("SELECT key, value FROM store_settings WHERE key IN ('upi_id', 'upi_qr')").all();
+  res.json(Object.fromEntries(rows.map((row) => [row.key, row.value])));
+});
 app.get('/api/products', (req, res) => {
   const category = req.query.category;
   const products = category ? db.prepare('SELECT * FROM products WHERE active = 1 AND category = ? ORDER BY id').all(category) : db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY id').all();
@@ -148,6 +152,29 @@ app.post('/api/orders/verify-payment', auth, (req, res) => {
   res.json({ success: true, orderId: order.id, status: 'paid' });
 });
 
+app.post('/api/orders/upi', auth, (req, res) => {
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const shipping = req.body.shipping;
+  const utr = String(req.body.utr || '').trim();
+  if (!items.length || !shipping?.address || !shipping?.pincode || utr.length < 6) return res.status(400).json({ error: 'Cart, delivery address and UPI reference are required.' });
+  const ids = items.map((item) => Number(item.productId)).filter(Boolean);
+  const products = db.prepare(`SELECT * FROM products WHERE id IN (${ids.map(() => '?').join(',')}) AND active = 1`).all(...ids);
+  const productMap = new Map(products.map((product) => [product.id, product]));
+  let amount = 0;
+  const safeItems = [];
+  for (const item of items) {
+    const product = productMap.get(Number(item.productId));
+    const quantity = Math.max(1, Math.min(10, Number(item.quantity) || 1));
+    if (!product || product.stock < quantity) return res.status(400).json({ error: `Product ${item.productId} is unavailable.` });
+    amount += product.price * quantity;
+    safeItems.push({ productId: product.id, quantity, unitPrice: product.price });
+  }
+  const order = db.prepare('INSERT INTO orders (user_id,amount,status,razorpay_payment_id,shipping_json) VALUES (?,?,?,?,?)').run(req.user.sub, amount, 'payment_review', `upi:${utr}`, JSON.stringify(shipping));
+  const addItem = db.prepare('INSERT INTO order_items (order_id,product_id,quantity,unit_price) VALUES (?,?,?,?)');
+  safeItems.forEach((item) => addItem.run(order.lastInsertRowid, item.productId, item.quantity, item.unitPrice));
+  res.status(201).json({ success: true, orderId: order.lastInsertRowid, status: 'payment_review' });
+});
+
 app.get('/api/orders', auth, (req, res) => res.json({ orders: db.prepare('SELECT id,amount,status,created_at FROM orders WHERE user_id = ? ORDER BY id DESC').all(req.user.sub) }));
 app.post('/api/admin/products', admin, (req, res) => {
   const { id, name, category, price, image, images = [], stock } = req.body;
@@ -155,6 +182,16 @@ app.post('/api/admin/products', admin, (req, res) => {
   const safeImages = Array.isArray(images) ? images.filter((value) => typeof value === 'string' && value.length < 2_000_000).slice(0, 4) : [];
   db.prepare('INSERT INTO products (id,name,category,price,image,images_json,stock) VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,price=excluded.price,image=excluded.image,images_json=excluded.images_json,stock=excluded.stock').run(id, name, category, price, image, JSON.stringify(safeImages.length ? safeImages : [image]), stock || 0);
   res.status(201).json({ success: true });
+});
+app.put('/api/admin/store-settings', admin, (req, res) => {
+  const upiId = String(req.body.upi_id || '').trim().slice(0, 120);
+  const upiQr = String(req.body.upi_qr || '').trim();
+  if (!upiId || !upiQr.startsWith('data:image/')) return res.status(400).json({ error: 'UPI ID and a QR image are required.' });
+  if (upiQr.length > 4_000_000) return res.status(413).json({ error: 'QR image is too large. Use a smaller image.' });
+  const saveSetting = db.prepare('INSERT INTO store_settings (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value');
+  saveSetting.run('upi_id', upiId);
+  saveSetting.run('upi_qr', upiQr);
+  res.json({ success: true });
 });
 app.delete('/api/admin/products/:id', admin, (req, res) => {
   const result = db.prepare('UPDATE products SET active = 0 WHERE id = ?').run(Number(req.params.id));

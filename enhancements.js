@@ -6,6 +6,19 @@ const galleryProducts = products.map((product) => ({
   ...product,
   images: product.images || [product.image]
 }));
+const apiBase = localStorage.getItem('shopnest-api') || 'http://localhost:4000';
+async function loadUpiSettings() {
+  try {
+    const response = await fetch(`${apiBase}/api/store-settings`);
+    const settings = await response.json();
+    if (settings.upi_qr && settings.upi_id) {
+      document.querySelector('#upiQr').src = settings.upi_qr;
+      document.querySelector('#upiId').textContent = settings.upi_id;
+      document.querySelector('#upiPayment').hidden = false;
+    }
+  } catch { /* Static storefront remains usable when the API is offline. */ }
+}
+loadUpiSettings();
 
 function openCustomerModal(modal) {
   overlay.hidden = false;
@@ -58,7 +71,8 @@ document.querySelector('#checkoutForm').addEventListener('submit', (event) => {
   const formData = new FormData(event.currentTarget);
   const pincode = String(formData.get('pincode')).replace(/\D/g, '');
   if (pincode.length !== 6) return showToast('Please enter a valid pincode');
+  if (!document.querySelector('#upiPayment').hidden && String(formData.get('utr') || '').trim().length < 6) return showToast('Enter your UPI payment reference');
   closeCustomerModal(checkoutModal);
-  showToast('Delivery details saved. Payment setup is next.');
+  showToast('Order request received. We will confirm your payment shortly.');
   event.currentTarget.reset();
 });

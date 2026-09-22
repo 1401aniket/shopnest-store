@@ -19,8 +19,11 @@ Important: OTP delivery and payments are disabled until real provider credential
 - `POST /api/auth/verify-otp`
 - `POST /api/orders/razorpay`
 - `POST /api/orders/verify-payment`
+- `POST /api/orders/upi`
 - `GET /api/orders`
 - `POST /api/admin/products`
 - `DELETE /api/admin/products/:id`
 
 Admin product payloads accept an `images` array with up to four image URLs or data URLs. The first image is used as the product cover.
+
+Static UPI orders are saved as `payment_review` with the submitted UTR. Confirm the payment in the merchant UPI app before fulfilling the order. A QR code alone cannot cryptographically verify payment.
