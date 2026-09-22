@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS products (
   category TEXT NOT NULL,
   price INTEGER NOT NULL,
   image TEXT NOT NULL,
+  images_json TEXT NOT NULL DEFAULT '[]',
   stock INTEGER NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1
 );

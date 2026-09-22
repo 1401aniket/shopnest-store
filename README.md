@@ -21,3 +21,6 @@ Important: OTP delivery and payments are disabled until real provider credential
 - `POST /api/orders/verify-payment`
 - `GET /api/orders`
 - `POST /api/admin/products`
+- `DELETE /api/admin/products/:id`
+
+Admin product payloads accept an `images` array with up to four image URLs or data URLs. The first image is used as the product cover.

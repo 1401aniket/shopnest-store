@@ -26,6 +26,7 @@ app.use(express.json({ limit: '100kb' }));
 const db = new Database(path.join(__dirname, '..', 'shopnest.db'));
 db.pragma('journal_mode = WAL');
 db.exec(readFileSync(path.join(__dirname, '..', 'schema.sql'), 'utf8'));
+try { db.exec("ALTER TABLE products ADD COLUMN images_json TEXT NOT NULL DEFAULT '[]'"); } catch (error) { if (!String(error.message).includes('duplicate column')) throw error; }
 
 const seedProducts = [
   [1, 'Ripple ceramic vase', 'Home', 1290, 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=700&q=80', 12],
@@ -80,7 +81,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'shopnest-ap
 app.get('/api/products', (req, res) => {
   const category = req.query.category;
   const products = category ? db.prepare('SELECT * FROM products WHERE active = 1 AND category = ? ORDER BY id').all(category) : db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY id').all();
-  res.json({ products });
+  res.json({ products: products.map((product) => ({ ...product, images: JSON.parse(product.images_json || '[]') })) });
 });
 
 app.post('/api/auth/request-otp', async (req, res) => {
@@ -149,10 +150,15 @@ app.post('/api/orders/verify-payment', auth, (req, res) => {
 
 app.get('/api/orders', auth, (req, res) => res.json({ orders: db.prepare('SELECT id,amount,status,created_at FROM orders WHERE user_id = ? ORDER BY id DESC').all(req.user.sub) }));
 app.post('/api/admin/products', admin, (req, res) => {
-  const { id, name, category, price, image, stock } = req.body;
+  const { id, name, category, price, image, images = [], stock } = req.body;
   if (!id || !name || !category || !price || !image) return res.status(400).json({ error: 'id, name, category, price and image are required.' });
-  db.prepare('INSERT INTO products (id,name,category,price,image,stock) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,price=excluded.price,image=excluded.image,stock=excluded.stock').run(id, name, category, price, image, stock || 0);
+  const safeImages = Array.isArray(images) ? images.filter((value) => typeof value === 'string' && value.length < 2_000_000).slice(0, 4) : [];
+  db.prepare('INSERT INTO products (id,name,category,price,image,images_json,stock) VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,category=excluded.category,price=excluded.price,image=excluded.image,images_json=excluded.images_json,stock=excluded.stock').run(id, name, category, price, image, JSON.stringify(safeImages.length ? safeImages : [image]), stock || 0);
   res.status(201).json({ success: true });
+});
+app.delete('/api/admin/products/:id', admin, (req, res) => {
+  const result = db.prepare('UPDATE products SET active = 0 WHERE id = ?').run(Number(req.params.id));
+  res.json({ success: result.changes > 0 });
 });
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found.' }));
