@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopnest | Everyday finds, thoughtfully picked</title>
+  <meta name="description" content="Shopnest is a modern marketplace for considered everyday essentials." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="announcement"><span>Free delivery on orders above ₹499</span><span class="announcement-right">New season, new energy <span aria-hidden="true">✦</span></span></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Shopnest home"><span class="brand-mark">s</span><span>shopnest</span></a>
+    <nav class="main-nav" aria-label="Main navigation"><a href="#shop">Shop</a><a href="#new">New in</a><a href="#stories">Stories</a></nav>
+    <div class="header-actions">
+      <button class="icon-button search-toggle" aria-label="Search">⌕</button>
+      <button class="icon-button" id="accountButton" aria-label="Account">♙</button>
+      <button class="bag-button" id="bagButton" aria-label="Shopping bag">Bag <span id="bagCount">0</span></button>
+    </div>
+  </header>
+  <div class="search-bar" id="searchBar"><label for="searchInput">Search the edit</label><input id="searchInput" type="search" placeholder="Try ‘linen’, ‘ceramic’ or ‘wireless’" /><button id="closeSearch" aria-label="Close search">×</button></div>
+
+  <main id="top">
+    <section class="hero" id="new">
+      <div class="hero-copy"><p class="eyebrow">THE SLOW SUNDAY EDIT</p><h1>Small things.<br><em>Better days.</em></h1><p class="hero-subtitle">Objects for everyday rituals, selected with a little more intention.</p><a class="primary-button" href="#shop">Explore the edit <span>↗</span></a></div>
+      <div class="hero-art"><div class="sun-disc"></div><div class="hero-note">Home, but<br><strong>make it yours.</strong></div><div class="hero-image"><img src="https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&w=1000&q=85" alt="Warmly styled living room with a sculptural chair" /></div><span class="hero-stamp">NEW<br>SEASON</span></div>
+    </section>
+
+    <section class="category-strip" id="shop"><div class="section-kicker">SHOP BY MOOD</div><div class="categories"><button class="category active" data-category="All"><span class="category-icon all-icon">✳</span><span>All finds</span></button><button class="category" data-category="Home"><span class="category-icon">⌂</span><span>Home</span></button><button class="category" data-category="Style"><span class="category-icon">♧</span><span>Style</span></button><button class="category" data-category="Tech"><span class="category-icon">⌁</span><span>Tech</span></button><button class="category" data-category="Wellness"><span class="category-icon">♡</span><span>Wellness</span></button><button class="category" data-category="Gifts"><span class="category-icon">◇</span><span>Gifts</span></button></div></section>
+
+    <section class="product-section"><div class="section-heading"><div><p class="eyebrow">A GOOD PLACE TO START</p><h2>Curated for you</h2></div><button class="text-button" id="viewAll">View all <span>→</span></button></div><div class="product-grid" id="productGrid"></div></section>
+    <section class="quote-section" id="stories"><span class="quote-mark">“</span><blockquote>Things that earn their place in your home,<br>and in your everyday.</blockquote><p>THE SHOPNEST PROMISE</p></section>
+    <section class="newsletter"><div><p class="eyebrow">THE GOOD LIST</p><h2>A little inspiration,<br>in your inbox.</h2></div><form id="newsletterForm"><input type="email" placeholder="Your email address" required><button class="primary-button" type="submit">Sign me up <span>↗</span></button><small id="newsletterMessage"></small></form></section>
+  </main>
+  <footer><a class="brand" href="#top"><span class="brand-mark">s</span><span>shopnest</span></a><p>Thoughtful things for everyday living.</p><span>© 2025 Shopnest</span></footer>
+
+  <div class="overlay" id="overlay" hidden></div>
+  <aside class="drawer" id="bagDrawer" aria-label="Shopping bag"><div class="drawer-head"><h2>Your bag <span id="drawerCount">0</span></h2><button class="close-button" data-close="bagDrawer">×</button></div><div id="bagItems" class="bag-items"></div><div class="drawer-total"><span>Subtotal</span><strong id="bagTotal">₹0</strong></div><button class="primary-button checkout-button" id="checkoutButton">Continue to checkout <span>→</span></button></aside>
+  <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden><button class="modal-close close-button" data-close="loginModal">×</button><div class="login-illustration"><span>✦</span><span>⌁</span><span>♡</span></div><p class="eyebrow">WELCOME IN</p><h2 id="loginTitle">Your world,<br><em>your nest.</em></h2><p class="login-copy">Sign in to save your finds and make every order feel personal.</p><form id="phoneForm"><label for="phone">Mobile number</label><div class="phone-input"><span>+91</span><input id="phone" type="tel" maxlength="10" inputmode="numeric" placeholder="10 digit mobile number" required></div><button class="primary-button full-button" type="submit">Send OTP <span>→</span></button><p class="form-note">By continuing, you agree to Shopnest's terms.</p></form><form id="otpForm" hidden><label for="otp">Enter the 4-digit code</label><input id="otp" class="otp-input" type="text" maxlength="4" inputmode="numeric" placeholder="• • • •" required><p class="otp-hint">Demo code: <strong>2468</strong></p><button class="primary-button full-button" type="submit">Verify & continue <span>→</span></button><button class="resend-button" type="button" id="resendOtp">Resend code</button></form><p class="login-message" id="loginMessage"></p></div>
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
